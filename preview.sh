@@ -1,1 +1,1 @@
-latexmk -pvc --xelatex bs.tex
+latexmk -pvc --xelatex use_ed.tex
