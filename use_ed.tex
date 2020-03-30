@@ -25,7 +25,7 @@ wrote \lstinline{vi} in 1976, it was the only widely available Unix
 text editor.
 
 \lstinline{ed} wasn't merely the only editor around, however --
-it included a set of powerful features, and one in particular,
+it included a set of powerful features
 that made it one of the most useful text editors available at
 that time. The extreme power and flexibility of this simple
 program were instrumental in the development of the Unix philosophy,
@@ -47,11 +47,11 @@ best qualities of the Unix philosophy are reflected by the design decisions
 in its original text editor.
 Whatever \lstinline{ed}'s faults may be, it was the text editor used to write
 the Unix kernel, shell, and userspace tools. Since the creators of Unix
-wrote their own text editor, they could have written a better one. It is
+wrote their own text editor, they could have written a better one if they thought one existed. It is
 of note that most of the Bell labs alumni that created Unix continued
 to use \lstinline{ed} long after \lstinline{vi} and other full-screen editors
-became available, and eventually wrote their own replacements for \lstinline{ed},
-\lstinline{sam} and \lstinline{acme}, that hew much closer to \lstinline{ed}'s
+became available, and eventually wrote their own replacements for \lstinline{ed} --
+\lstinline{sam} and \lstinline{acme} -- that hew much closer to \lstinline{ed}'s
 original regex-oriented user interface.
 
 \section{Minimalism}
@@ -63,9 +63,60 @@ of the time (the PDP-7 on which \lstinline{ed} ran had only [] of core memory),
 but had more to do with a philosophy that one should use just enough code,
 and no more, to complete the task at hand. This turned out to be one of the
 strengths of Unix generally -- a naïve hacker could read and digest the entire
-codebase because all code was as small and simple as it could be made. This allowed
+codebase because all code was as small and simple as it could be made to be. This allowed
 new programmers to quickly get up to speed and begin modifying the source, even
 if they didn't know the original authors.
+
+\section{Unbroken interface}
+
+\lstinline{ed} never pulls your attention from one place to another.
+One of the big advantages that command line programmers tout about
+the command line in general, and text-user-interface text editors
+such as \lstinline{vi} in particular, is that they allow you to
+``live'' exclusively in the terminal, never being distracted
+by pop-up windows or action in another place on the screen,
+and then never require you to flip through a set of windows using
+\lstinline{alt + tab} just to find the thing you meant to work on.
+This is true, but only to a point. When you enter \lstinline{vi},
+your terminal is taken away from you in a meaningful sense. The entire
+terminal view is erased and instead filled with the contents of the
+text buffer you're currently editing. If you want to go back to your shell
+for a minute, you can do so by a variety of methods, but that means
+\lstinline{vi} has to save your terminal contents and write them
+back to ther terminal so you can see them again. You can't simultaneously
+see your terminal and your edited document. \lstinline{ed} never had
+this problem. Because it doesn't directly manipulate your
+screen, but instead just prints to \lstinline{stdout}, entering
+\lstinline{ed} does not clear your screen, and any useful
+information in your terminal (say, the output of `ls' or `cat')
+is still available to you.
+
+Likewise, in \lstinline{vi}, there is a command (!) that allows you
+to send text to the shell to be interpreted as a shell command.
+This is a cool feature because it allows you to do things like
+take the contents of a line in your document, pipe it to a command,
+and view the output of the command or write it back into the current buffer.
+The only problem is, when you do this, you get that crazy interface jump
+again -- the view switches back to your shell output, and you can't see
+the document you're editing. Pressing a key will get you back to the document,
+but now you can't see the shell output any more! This leads to strange
+patterns in the use of \lstinline{vi}. I once saw a stackoverflow thread
+in which someone asked how to see the contents of the current directory from
+inside \lstinline{vim}. Rather than the simple answer (\lstinline{!ls}), the
+top answer claimed that the right way to do this was to use \lstinline{:e ctrl-d}
+to start to open a new buffer for editing (\lstinline{:e}), then ask \lstinline{vi}
+to give you a list of autofill options for the new buffer (\lstinline{ctrl-d}).
+This should not be necessary, and in \lstinline{ed}, it isn't. When you type
+\lstinline{!ls} in \lstinline{ed}, you just get back 
+the output of \lstinline{ls}, correctly formatted and unmoving, on the next
+line of your interpreter. This allows for the \lstinline{!} command to do what
+it was always intended to do: use shell programs as extensions to \lstinline{ed}
+seamlessly, without any need for a built-in scripting language.
+This is a common thread with \lstinline{ed}: it leans heavily on the interfaces provided
+by the operating system (\lstinline{stdin}, \lstinline{stdout}, the terminal, the shell, etc.).
+This isn't laziness, but rather a method for keeping the code small, the interface consistent,
+and the maximum number of tools instantly available to the user. In short, it is good design.
+
 \section{Regular expressions}
 
 Apart from straightforward entry of text, the primary method
@@ -94,14 +145,14 @@ $ ls
 ed_print.c
 $ ed ed_print.c
 93
-,p
+1,$p
 #include <stdio.h>
 
 int main() {
     printf("ed is the standard editor\n");
     return(0);
 }
-/printf
+/printf/
     printf("ed is the standard editor\n");
 s/the.*ard/a good/p
     printf("ed is a good editor\n");
@@ -126,6 +177,48 @@ led to its greatest influence on Unix: the creation of pipeable
 shell tools and little languages.
 
 \section{Descendants of \lstinline{ed}}
+
+\lstinline{ed} predates the pipe, the feature of Unix that most easily allowed shell
+tools to interact with one another.
+Before pipes were added, as discussed above, \lstinline{ed} was the easiest, and most
+often used, method for quickly automating text manipulation tasks.
+When pipes were eventually added to Unix, \lstinline{ed} was the template for many
+of the major pipeline tools.
+\lstinline{grep} is the most famous example of this, being a neologism derived
+from the common ed pattern \lstinline{g/re/p}, for ``global regular expression print''.
+That's right: the most famous shell tool is a re-implementation of an \lstinline{ed}
+command. Further tools, such as \lstinline{sed} and \lstinline{awk}, have similar
+roots in \lstinline{ed}. From them, there is a clear throughline connecting
+\lstinline{ed} all the way to modern scripting languages like \lstinline{perl} and
+\lstinline{python}. \lstinline{ed} not only influenced these languages -- in many
+ways, it was the template for the entire Unix paradigm of integrating scripting languages
+with compiled code for rapid prototyping, portability, and speed.
+
+\lstinline{ed} didn't just influence scripting languages. Through the lexer and parser
+programs \lstinline{lex} and \lstinline{yacc} it directly influenced the way that
+scripting languages are implemented. \lstinline{lex} is a lexing program that feeds
+language tokens to \lstinline{yacc}, a language parser. \lstinline{lex} code consists
+primarily of a set of \lstinline{ed}-style regular expressions that specify
+the types of tokens that the language should accept. These programs were used to implement
+some of the above languages, most notably \lstinline{awk}. So, \lstinline{awk} is an ed-influenced
+regular-expression-driven reporting language, written in an ed-influenced, regular-expression-driven lexer/parser toolset,
+and the code for all of these tools was written in \lstinline{ed}. It's \lstinline{ed} all the way down!
+
+\section{Some takeaways}
+
+If you take one thing from this essay, it should not just be that \lstinline{ed} is
+a masterpiece of minimalist design, or that it is one of the most influential programs
+ever written, though it is both. What you should take away is that using \lstinline{ed}
+is a way to use Unix the way it was intended to be used by the people that designed
+the entire system. Don't worry about using it all the time -- I certainly don't. But try
+using it for a few days, even a few weeks. It may be frustrating at first, but using
+it will show you just how powerful a few, carefully chosen lines of C code can be.
+After using it for a while, you will see all text as beautifully nested sets of
+regular expressions, ready to be taken apart and put back together with a single
+\lstinline{s/re/re/g}. You'll scoff at the so-called ``power users'' of other editors,
+with their clunky point-and-click interfaces and unneccessary extensions.
+If you don't believe me about any of this, at least believe that \lstinline{ed} really
+is a useful editor -- I used it to write this entire document.
 
 
 
