@@ -41,10 +41,94 @@ that \lstinline{ed}'s place as the standard editor was a comical throwback
 to a time when RAM (or \emph{core} for the elder statesmen) was measured
 in kilobytes, having been superseded in terms of usability by much more
 powerful editors such as \lstinline{vi} and \lstinline{emacs}.
-I am not particularly interested in arguing that \lstinline{ed} is better
-in some way than newer editors, but instead argue here that many of the
+I am not interested in arguing that \lstinline{ed} is better
+than newer editors, but instead argue here that many of the
 best qualities of the Unix philosophy are reflected by the design decisions
 in its original text editor.
+Whatever \lstinline{ed}'s faults may be, it was the text editor used to write
+the Unix kernel, shell, and userspace tools. Since the creators of Unix
+wrote their own text editor, they could have written a better one. It is
+of note that most of the Bell labs alumni that created Unix continued
+to use \lstinline{ed} long after \lstinline{vi} and other full-screen editors
+became available, and eventually wrote their own replacements for \lstinline{ed},
+\lstinline{sam} and \lstinline{acme}, that hew much closer to \lstinline{ed}'s
+original regex-oriented user interface.
+
+\section{Minimalism}
+
+The original \lstinline{ed} source code is only [] lines of code.
+Not bad for an editor that includes a full regular expression engine
+and complete scriptability. This was due partially to the technical constraints
+of the time (the PDP-7 on which \lstinline{ed} ran had only [] of core memory),
+but had more to do with a philosophy that one should use just enough code,
+and no more, to complete the task at hand. This turned out to be one of the
+strengths of Unix generally -- a naïve hacker could read and digest the entire
+codebase because all code was as small and simple as it could be made. This allowed
+new programmers to quickly get up to speed and begin modifying the source, even
+if they didn't know the original authors.
+\section{Regular expressions}
+
+Apart from straightforward entry of text, the primary method
+for editing text in \lstinline{ed} is regular expression
+find-and-replace. In fact, because \lstinline{ed} is a line editor,
+this is the only way to edit text without rewriting an entire line
+at the minimum. First time users of \lstinline{ed} find this
+constraining, but the extreme flexibility of regular expressions
+allows for arbitrarily complex edits on any text. With practice,
+this becomes as natural, and quick, as any other type of interactive
+editing. This type of edit is also naturally extensible to multi-line
+editing, a feature that is often touted as a killer ``new'' feature of
+modern text editors (see sublime text, atom, or Visual Studio Code).
+\lstinline{ed} is the program that introduced the convention,
+in Unix programs, that regular expressions should be surrounded
+by /slashes/ and should be prefixed by commands (`s', `g') and suffixed
+by options (`p', `2', `l').
+
+\section{Scriptability}
+
+\lstinline{ed} was intended to be used interactively. A typical \lstinline{ed}
+session looks something like this:
+
+\begin{lstlisting}
+$ ls
+ed_print.c
+$ ed ed_print.c
+93
+,p
+#include <stdio.h>
+
+int main() {
+    printf("ed is the standard editor\n");
+    return(0);
+}
+/printf
+    printf("ed is the standard editor\n");
+s/the.*ard/a good/p
+    printf("ed is a good editor\n");
+w
+87
+q
+\end{lstlisting}
+
+Here, the author opens the file ``ed\_print.c'' using ed,
+prints the contents of the file (\lstinline{1,$p} indicates
+that one should ``p''rint the lines from 1 until the end of the document),
+searches (/) for a \lstinline{printf} line,
+then ``s''ubstitutes the phrase ``a good'' for the regular
+expression \lstinline{the.*ard}.
+This is accomplished entirely in a unixy way -- \lstinline{ed} opens
+up a file, then applies operations to the file using commands
+sent to it over \lstinline{stdin}. Because it accepts commands
+directly on \lstinline{stdin}, \lstinline{ed} can be used just
+as easily to run pre-cooked `scripts' of \lstinline{ed} commands
+as it can be used interactively. It is this killer feature that
+led to its greatest influence on Unix: the creation of pipeable
+shell tools and little languages.
+
+\section{Descendants of \lstinline{ed}}
+
+
+
 % \lstinline{ed} is still as usable today as
 % it was in 1969, and using \lstinline{ed} for a few days or weeks will let
 
