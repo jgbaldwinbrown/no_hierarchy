@@ -180,8 +180,8 @@ shell tools and little languages.
 
 \lstinline{ed} predates the pipe, the feature of Unix that most easily allowed shell
 tools to interact with one another.
-Before pipes were added, as discussed above, \lstinline{ed} was the easiest, and most
-often used, method for quickly automating text manipulation tasks.
+Before pipes were added, \lstinline{ed} was the easiest and most
+often used method for quickly automating text manipulation tasks.
 When pipes were eventually added to Unix, \lstinline{ed} was the template for many
 of the major pipeline tools.
 \lstinline{grep} is the most famous example of this, being a neologism derived
@@ -190,13 +190,13 @@ That's right: the most famous shell tool is a re-implementation of an \lstinline
 command. Further tools, such as \lstinline{sed} and \lstinline{awk}, have similar
 roots in \lstinline{ed}. From them, there is a clear throughline connecting
 \lstinline{ed} all the way to modern scripting languages like \lstinline{perl} and
-\lstinline{python}. \lstinline{ed} not only influenced these languages -- in many
-ways, it was the template for the entire Unix paradigm of integrating scripting languages
+\lstinline{python} (\lstinline{perl} even uses \lstinline{ed}'s \lstinline{/regex/} syntax).
+In many ways, \lstinline{ed} was the template for the entire Unix paradigm of integrating scripting languages
 with compiled code for rapid prototyping, portability, and speed.
 
 \lstinline{ed} didn't just influence scripting languages. Through the lexer and parser
 programs \lstinline{lex} and \lstinline{yacc} it directly influenced the way that
-scripting languages are implemented. \lstinline{lex} is a lexing program that feeds
+languages are implemented. \lstinline{lex} is a lexing program that feeds
 language tokens to \lstinline{yacc}, a language parser. \lstinline{lex} code consists
 primarily of a set of \lstinline{ed}-style regular expressions that specify
 the types of tokens that the language should accept. These programs were used to implement
@@ -209,10 +209,10 @@ and the code for all of these tools was written in \lstinline{ed}. It's \lstinli
 If you take one thing from this essay, it should not just be that \lstinline{ed} is
 a masterpiece of minimalist design, or that it is one of the most influential programs
 ever written, though it is both. What you should take away is that using \lstinline{ed}
-is a way to use Unix the way it was intended to be used by the people that designed
+is a way to use Unix as intended by the people that designed
 the entire system. Don't worry about using it all the time -- I certainly don't. But try
 using it for a few days, even a few weeks. It may be frustrating at first, but using
-it will show you just how powerful a few, carefully chosen lines of C code can be.
+it will show you just how powerful a few carefully chosen lines of C code can be.
 After using it for a while, you will see all text as beautifully nested sets of
 regular expressions, ready to be taken apart and put back together with a single
 \lstinline{s/re/re/g}. You'll scoff at the so-called ``power users'' of other editors,
