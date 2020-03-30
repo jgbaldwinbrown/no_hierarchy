@@ -6,7 +6,15 @@
 
 \documentclass[12pt]{article}
 \usepackage{tabu}
+\usepackage{xcolor}
 \usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  frame=single,
+  breaklines=true,
+  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+}
 
 \begin{document}
 \maketitle
@@ -130,6 +138,62 @@ this becomes as natural, and as quick, as any other type of interactive
 editing. This type of edit is also naturally extensible to multi-line
 editing, a feature that is often touted as a killer ``new'' feature of
 modern text editors (see sublime text, atom, or Visual Studio Code).
+For example, take the following file:
+\begin{lstlisting}[language=c]
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char *input1 = "Hello world!";
+    char *input2 = "Here we are, world!";
+    char *input3 = "Goodbye world!";
+    char *s2 = malloc(sizeof(char) * (strlen(input1)+1);
+    strcpy(s2, input1);
+    puts(s2);
+    char *s2 = malloc(sizeof(char) * (strlen(input2)+1);
+    strcpy(s2, input2);
+    puts(s2);
+    char *s2 = malloc(sizeof(char) * (strlen(input3)+1);
+    strcpy(s2, input3);
+    puts(s2);
+    free(s2);
+    return(0);
+}
+\end{lstlisting}
+
+There is a memory leak (mulitple \lstinline{malloc\}s with the same pointer) that we
+can fix using the command:
+\begin{lstlisting}
+/malloc.*input2/,/malloc.*input3/s/malloc(/realloc(s2, /
+\end{lstlisting}
+to change the file to the following:
+
+\begin{lstlisting}[language=c]
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char *input1 = "Hello world!";
+    char *input2 = "Here we are, world!";
+    char *input3 = "Goodbye world!";
+    char *s2 = malloc(sizeof(char) * (strlen(input1)+1);
+    strcpy(s2, input1);
+    puts(s2);
+    char *s2 = realloc(s2, sizeof(char) * (strlen(input2)+1);
+    strcpy(s2, input2);
+    puts(s2);
+    char *s2 = realloc(s2, sizeof(char) * (strlen(input3)+1);
+    strcpy(s2, input3);
+    puts(s2);
+    free(s2);
+    return(0);
+}
+\end{lstlisting}
+
+This fixes the error in a single command that can be used on an arbitrarily large
+number of lines defined by regular expressions.
 \lstinline{ed} is the program that introduced the convention,
 in Unix programs, that regular expressions should be surrounded
 by /slashes/ and should be prefixed by commands (`s', `g') and suffixed
