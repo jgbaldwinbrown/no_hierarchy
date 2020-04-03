@@ -71,7 +71,7 @@ of the time (the PDP-7 on which \lstinline{ed} ran had only 4k-64k of 18-bit wor
 but had more to do with a philosophy that one should use just enough code,
 and no more, to complete the task at hand. This turned out to be one of the
 strengths of Unix generally -- a naïve hacker could read and digest the entire
-codebase because all code was as small and simple as it could be made to be. This allowed
+codebase because all code was as small and simple as it could be. This allowed
 new programmers to quickly get up to speed and begin modifying the source, even
 if they didn't know the original authors.
 
@@ -81,11 +81,11 @@ if they didn't know the original authors.
 One of the big advantages that command line programmers tout about
 the command line in general, and text-user-interface text editors
 such as \lstinline{vi} in particular, is that they allow you to
-``live'' exclusively in the terminal, never being distracted
+``live'' exclusively in the terminal, never distracted
 by pop-up windows or action in another place on the screen,
-and then never require you to flip through a set of windows using
+and they never require you to flip through a set of windows using
 \lstinline{alt + tab} just to find the thing you meant to work on.
-This is true, but only to a point. When you enter \lstinline{vi},
+This is true up to a point. When you enter \lstinline{vi},
 your terminal is taken away from you in a meaningful sense. The entire
 terminal view is erased and instead filled with the contents of the
 text buffer you're currently editing. If you want to go back to your shell
@@ -99,13 +99,13 @@ screen, but instead just prints to \lstinline{stdout}, entering
 information in your terminal (say, the output of `ls' or `cat')
 is still available to you.
 
-Likewise, in \lstinline{vi}, there is a command (!) that allows you
+Likewise, in \lstinline{vi}, there is a command (\lstinline{!}) that allows you
 to send text to the shell to be interpreted as a shell command.
 This is a cool feature because it allows you to do things like
 take the contents of a line in your document, pipe it to a command,
 and view the output of the command or write it back into the current buffer.
 The only problem is, when you do this, you get that crazy interface jump
-again -- the view switches back to your shell output, and you can't see
+again. The view switches back to your shell output, and you can't see
 the document you're editing. Pressing a key will get you back to the document,
 but now you can't see the shell output any more! This leads to strange
 patterns in the use of \lstinline{vi}. I once saw a stackoverflow thread
@@ -139,6 +139,7 @@ editing. This type of edit is also naturally extensible to multi-line
 editing, a feature that is often touted as a killer ``new'' feature of
 modern text editors (see sublime text, atom, or Visual Studio Code).
 For example, take the following file:
+
 \begin{lstlisting}[language=c]
 #include <stdlib.h>
 #include <stdio.h>
@@ -164,8 +165,10 @@ int main() {
 
 There is a memory leak (mulitple \lstinline{malloc\}s with the same pointer) that we
 can fix using the command:
+
 \begin{lstlisting}
 /malloc.*input2/,/malloc.*input3/s/malloc(/realloc(s2, /
+
 \end{lstlisting}
 to change the file to the following:
 
@@ -231,12 +234,13 @@ that one should ``p''rint the lines from 1 until the end of the document),
 searches (/) for a \lstinline{printf} line,
 then ``s''ubstitutes the phrase ``a good'' for the regular
 expression \lstinline{the.*ard}.
+Finally, the programmer ``w''rites the modified buffer to disk and ``q''uits.
 This is accomplished entirely in a unixy way -- \lstinline{ed} opens
-up a file, then applies operations to the file using commands
+up a file, reads it into a buffer, then applies operations to the buffer using commands
 sent to it over \lstinline{stdin}. Because it accepts commands
 directly on \lstinline{stdin}, \lstinline{ed} can be used just
 as easily to run pre-cooked `scripts' of \lstinline{ed} commands
-as it can be used interactively. It is this killer feature that
+as it can be used interactively. It is this feature that
 led to its greatest influence on Unix: the creation of pipeable
 shell tools and little languages.
 
@@ -246,7 +250,7 @@ shell tools and little languages.
 tools to interact with one another.
 Before pipes were added, \lstinline{ed} was the easiest and most
 often used method for quickly automating text manipulation tasks.
-When pipes were eventually added to Unix, \lstinline{ed} was the template for many
+When pipes were added to Unix, \lstinline{ed} was the template for many
 of the major pipeline tools.
 \lstinline{grep} is the most famous example of this, being a neologism derived
 from the common ed pattern \lstinline{g/re/p}, for ``global regular expression print''.
@@ -279,10 +283,54 @@ using it for a few days, even a few weeks. It may be frustrating at first, but u
 it will show you just how powerful a few carefully chosen lines of C code can be.
 After using it for a while, you will see all text as beautifully nested sets of
 regular expressions, ready to be taken apart and put back together with a single
-\lstinline{s/re/re/g}. You'll scoff at the so-called ``power users'' of other editors,
+\lstinline{s/re/re/g}. You'll scoff at the ``power users'' of other editors,
 with their clunky point-and-click interfaces and unneccessary extensions.
 If you don't believe me about any of this, at least believe that \lstinline{ed} really
 is a useful editor -- I used it to write this entire document.
+
+\section{Appendix: some cool \lstinline{ed} commands}
+
+\lstinline{ed} can seem a bit baroque, but there are a few common patterns that, once learned,
+make its use simple and enjoyable. What follows are commands (mostly regex
+substitution patterns) that I've found make for easy writing.
+
+
+\subsection{Surrounding text}
+
+To surround text with, say, (parentheses) or ``quotes'', the following pattern helps a lot.
+Match the text that you want to surround, then use the \lstinline{&} symbol to reference
+the entire matched group, like so:
+
+\begin{lstlisting}
+,p
+Visual Studio Code is a text editor.
+s/tex.*or/"&"/p
+Visual Studio Code is a "text editor".
+\end{lstlisting}
+
+\subsection{Edit surrounded text}
+
+By the same token, you can easily edit the text in a set of (parentheses) or similar with the following:
+
+\begin{lstlisting}
+.p
+    for (int i=0; i<10; i++) {
+s/(.*)/(int i=10; i>0; i++)
+    for (int i=10; i>0; i++) {
+\end{lstlisting}
+
+\subsection{swapping words in a sentence}
+
+Capture groups are a quick way to move words around in a sentence. Capture them with \lstinline{\(\)}, then
+reference them with \lstinline{\1}, \lstinline{\2}, etc.
+
+\begin{lstlisting}
+.p
+I think you're stuck in the '70s really
+s/\(st.*70s\) \(re.*\)/\2 \1
+I think you're really stuck in the '70s
+s/\(stuck\) \(really\)/\2 \1
+\end{lstlisting}
 
 
 
