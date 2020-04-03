@@ -348,25 +348,25 @@ The quick brown fox jumps over the lazy dog.
 Commenting out lines of code is easy with a quick substitution:
 
 \begin{lstlisting}
-,n
-1	#include <stdio.h>
-2	
-3	int main() {
-4	    puts("I wonder if anyone will see this line?");
-5	    puts("They definitely won't see this one!");
-6	    puts("Or this one.");
-7	    return(0);
-8	}
+,p
+#include <stdio.h>
+
+int main() {
+    puts("I wonder if anyone will see this line?");
+    puts("They definitely won't see this one!");
+    puts("Or this one.");
+    return(0);
+}
 /They/,/Or/s/p.*/\/*&*\//
-,n
-1	#include <stdio.h>
-2	
-3	int main() {
-4	    puts("I wonder if anyone will see this line?");
-5	    /*puts("They definitely won't see this one!");*/
-6	    /*puts("Or this one.");*/
-7	    return(0);
-8	}
+,p
+#include <stdio.h>
+
+int main() {
+    puts("I wonder if anyone will see this line?");
+    /*puts("They definitely won't see this one!");*/
+    /*puts("Or this one.");*/
+    return(0);
+}
 \end{lstlisting}
 
 Here, the \lstinline{p.*} regular expression matches everything in the line after the first p; \lstinline{\/*&*\/}
