@@ -308,7 +308,7 @@ s/tex.*or/"&"/p
 Visual Studio Code is a "text editor".
 \end{lstlisting}
 
-\subsection{Edit surrounded text}
+\subsection{Editing surrounded text}
 
 By the same token, you can easily edit the text in a set of (parentheses) or similar with the following:
 
@@ -331,6 +331,48 @@ s/\(st.*70s\) \(re.*\)/\2 \1
 I think you're really stuck in the '70s
 s/\(stuck\) \(really\)/\2 \1
 \end{lstlisting}
+
+\subsection{Appending to a line}
+
+Substitutions are a quick way to append to a line, like so:
+
+\begin{lstlisting}
+,p
+The quick brown fox
+s/$/jumps over the lazy dog./p
+The quick brown fox jumps over the lazy dog.
+\end{lstlisting}
+
+\subsection{Commenting out lines}
+
+Commenting out lines of code is easy with a quick substitution:
+
+\begin{lstlisting}
+,n
+1	#include <stdio.h>
+2	
+3	int main() {
+4	    puts("I wonder if anyone will see this line?");
+5	    puts("They definitely won't see this one!");
+6	    puts("Or this one.");
+7	    return(0);
+8	}
+/They/,/Or/s/p.*/\/*&*\//
+,n
+1	#include <stdio.h>
+2	
+3	int main() {
+4	    puts("I wonder if anyone will see this line?");
+5	    /*puts("They definitely won't see this one!");*/
+6	    /*puts("Or this one.");*/
+7	    return(0);
+8	}
+\end{lstlisting}
+
+Here, the \lstinline{p.*} regular expression matches everything in the line after the first p; \lstinline{\/*&*\/}
+surrounds that with comment symbols. Note that \lstinline{&} corresponds to the original matched text, and
+slashes are backslash escaped.
+
 
 
 
