@@ -295,6 +295,21 @@ make its use simple and enjoyable. What follows are commands (mostly regex
 substitution patterns) that I've found make for easy writing.
 
 
+\subsection{Choosing item to substitute}
+
+\lstinline{ed} performs a substitution on the first match in a line by default, and
+performs the substitution on all lines with the \lstinline{g} suffix. That's not all,
+though. If you want to make a substitution on the second match for a regular expression,
+simply add that number as a suffix to the command, as below:
+
+\begin{lstlisting}
+,p
+Is it not true that regular expressions are not flexible enough for interactive editing?
+s/not //2
+Is it not true that regular expressions are flexible enough for interactive editing?
+wq
+\end{lstlisting}
+
 \subsection{Surrounding text}
 
 To surround text with, say, (parentheses) or ``quotes'', the following pattern helps a lot.
@@ -473,8 +488,23 @@ wq
 
 \subsection{splitting a line by a delimiter}
 
-Line splitting is a weakness with \lstinline{ed}. The best way I've found
-to deal with it is to send text that needs splitting out to sed, like so:
+Line splitting is easy with \lstinline{ed}, though it can be a bit unintuitive.
+In order to insert a newline character, you need to backslash-escape a literal newline, like so:
+
+\begin{lstlisting}
+,p
+entry1 entry2 entry3
+1s/ /\
+/g
+,p
+entry1
+entry2
+entry3
+w
+q
+\end{lstlisting}
+
+Alternatively, you can farm this out to sed like so:
 
 \begin{lstlisting}
 ,p
@@ -513,6 +543,41 @@ This is a second sentence.
 w
 q
 \end{lstlisting}
+
+But a much easier way to split a sentence is by inserting a newline as in the previous section:
+
+\begin{lstlisting}
+,p
+This is one sentence. This is a second sentence.
+1s/\. /.\
+
+,p
+This is one sentence.
+this is a second sentence.
+w
+q
+\end{lstlisting}
+
+\subsection{Operating on lines filled with slashes}
+
+When you want to perform a substitution that involves slashes, ordinary lstinline{s///} substitution notation
+becomes cumbersome because all slashes must be backslash escaped.
+This is easily circumvented by using a character other than \lstinline{/} for the substitution command.
+The \lstinline{s} command assumes that whatever character follows \lstinline{s} is the delimiter
+for the command, so any character can be used, as follows:
+
+\begin{lstlisting}
+,p
+/this/is/a/long/filename.txt
+s|long/filename|long_filename.txt
+,p
+/this/is/a/long_filename.txt
+s.long_filename\.txt.long_filename.tex
+,p
+/this/is/a/long_filename.tex
+wq
+\end{lstlisting}
+
 
 
 
