@@ -149,13 +149,13 @@ int main() {
     char *input1 = "Hello world!";
     char *input2 = "Here we are, world!";
     char *input3 = "Goodbye world!";
-    char *s2 = malloc(sizeof(char) * (strlen(input1)+1);
+    char *s2 = malloc(sizeof(char) * (strlen(input1)+1));
     strcpy(s2, input1);
     puts(s2);
-    char *s2 = malloc(sizeof(char) * (strlen(input2)+1);
+    char *s2 = malloc(sizeof(char) * (strlen(input2)+1));
     strcpy(s2, input2);
     puts(s2);
-    char *s2 = malloc(sizeof(char) * (strlen(input3)+1);
+    char *s2 = malloc(sizeof(char) * (strlen(input3)+1));
     strcpy(s2, input3);
     puts(s2);
     free(s2);
@@ -181,13 +181,13 @@ int main() {
     char *input1 = "Hello world!";
     char *input2 = "Here we are, world!";
     char *input3 = "Goodbye world!";
-    char *s2 = malloc(sizeof(char) * (strlen(input1)+1);
+    char *s2 = malloc(sizeof(char) * (strlen(input1)+1));
     strcpy(s2, input1);
     puts(s2);
-    char *s2 = realloc(s2, sizeof(char) * (strlen(input2)+1);
+    char *s2 = realloc(s2, sizeof(char) * (strlen(input2)+1));
     strcpy(s2, input2);
     puts(s2);
-    char *s2 = realloc(s2, sizeof(char) * (strlen(input3)+1);
+    char *s2 = realloc(s2, sizeof(char) * (strlen(input3)+1));
     strcpy(s2, input3);
     puts(s2);
     free(s2);
@@ -372,6 +372,147 @@ int main() {
 Here, the \lstinline{p.*} regular expression matches everything in the line after the first p; \lstinline{\/*&*\/}
 surrounds that with comment symbols. Note that \lstinline{&} corresponds to the original matched text, and
 slashes are backslash escaped.
+
+\subsection{running external programs}
+
+\lstinline{ed} can easily run external programs without disrupting either \lstinline{ed}'s
+interface or the called program. The \lstinline{!} command calls an external (shell) command, as follows:
+
+\begin{lstlisting}
+
+$ ls
+a.txt
+$ ed a.txt
+81
+I don't have to stop editing this file
+just to list the files in this directory.
+!ls
+a.txt
+!
+q
+\end{lstlisting}
+
+\subsection{building and testing a program}
+
+You can build programs using tools like \lstinline{make} without leaving \lstinline{ed}. Here's a quick example:
+
+\begin{lstlisting}
+
+$ ls
+hi.c Makefile
+$ cat Makefile
+
+all: hi
+
+hi: hi.c
+	gcc -Wall -Werror -Wpedantic -Wextra -O3 -o $@ $^
+$ ed hi.c
+,p
+#include <stdio.h>
+
+int main() {
+    puts("Hi, everyone!")
+    return(0);
+}
+!make
+gcc -Wall -Werror -Wpedantic -Wextra -O3 -o hi hi.c
+hi.c: In function ‘main’:
+hi.c:5:5: error: expected ‘;’ before ‘return’
+     return(0);
+     ^~~~~~
+!
+?put?
+s/$/;
+!make
+gcc -Wall -Werror -Wpedantic -Wextra -O3 -o hi hi.c
+!
+w
+q
+\end{lstlisting}
+
+If you have a test suite to run, put it into a shell script with a short name, and you can
+quickly call it from within \lstinline{ed}:
+
+\begin{lstlisting}
+$ ls
+hi.c Makefile m
+$ cat m
+#!/bin/bash
+set -e
+
+make && \
+./hi
+$ ed hi.c
+!./m
+gcc -Wall -Werror -Wpedantic -Wextra -O3 -o hi hi.c
+Hi, everyone!
+!
+w
+q
+\end{lstlisting}
+
+\subsection{Filtering text through external programs}
+
+One of the most powerful \lstinline{ed} features is the ability to write to and read
+from external files and commands. The following syntax allows a portion of a file to be written
+to an external command:
+
+\begin{lstlisting}
+,p
+A common thing people need to do is wrap some lines. I like to use the "fmt" command to do this, though "fold" works just as well in a pinch.
+1w !fmt -w 40 > buf
+1r buf
+,n
+A common thing people need to do is wrap some lines. I like to use the "fmt" command to do this, though "fold" works just as well in a pinch.
+A common thing people need to do is
+wrap some lines. I like to use the
+"fmt" command to do this, though "fold"
+works just as well in a pinch.
+wq
+\end{lstlisting}
+
+\subsection{splitting a line by a delimiter}
+
+Line splitting is a weakness with \lstinline{ed}. The best way I've found
+to deal with it is to send text that needs splitting out to sed, like so:
+
+\begin{lstlisting}
+,p
+entry1 entry2 entry3
+1w !sed 's/ /\r/g' > buf
+1r buf
+,p
+entry1 entry2 entry3
+entry1
+entry2
+entry3
+w
+q
+\end{lstlisting}
+
+\subsection{splitting a line at a sentence boundary}
+
+One of \lstinline{ed}'s shortcomings is its difficulty dealing with text that isn't
+formatted cleanly into lines. It is possible
+to split a line by duplicating it, then deleting a different half of the line in each copy, as follows:
+
+\begin{lstlisting}
+,p
+This is one sentence. This is a second sentence.
+.t.
+,p
+This is one sentence. This is a second sentence.
+This is one sentence. This is a second sentence.
+1s/\..*/.
+This is one sentence.
+2s/[^.]*\. 
+This is a second sentence.
+,p
+This is one sentence.
+This is a second sentence.
+w
+q
+\end{lstlisting}
 
 
 
