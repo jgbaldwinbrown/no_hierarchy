@@ -1,4 +1,4 @@
-\title{Why every hacker should try \lstinline{ed}}
+\title{An argument against hierarchy in software projects}
 \author{
         James Baldwin-Brown \\
 }
@@ -8,6 +8,7 @@
 \usepackage{tabu}
 \usepackage{xcolor}
 \usepackage{listings}
+\usepackage{csquotes}
 \lstset{
   basicstyle=\ttfamily,
   columns=fullflexible,
@@ -24,563 +25,403 @@
 
 \section{Introduction}
 
-Much has been written about the value of the \lstinline{ed} text editor
-and its importance to the history of programming culture, especially
-in Unix hacker circles. The short version is that, in the late 1960s,
-Ken Thompson wrote a simplified version of the \lstinline{qed} editor
-to use with the nascent Unix operating system and, until Bill Joy
-wrote \lstinline{vi} in 1976, it was the only widely available Unix
-text editor.
+I've been learning a new programming language, Go. I've also been reading some
+classic literature about Unix and the open source / hacker philosophy. There's
+a lot that both of these sources (\textit{sources}! Okay, I'll show myself
+out.) have to say, but one theme that I keep seeing repeated is that of
+hierarchy, and the problems inherent in it. Typical programming, especially in
+object-oriented languages, is highly hierarchical. A lot of a programmer's time
+is spent thinking things like, ``Should A be a subclass of B, or should B be a
+subclass of A and C?'' I'm going to argue here that this style of structuring a
+project sounds good in theory, but ultimately leads to inflexible software that
+is difficult to re-use. Instead, I argue for a style of programming that
+minimizes hierarchy, giving the maximum flexibility and power to the eventual
+user of software. This sometimes means writing more code up front, but in the
+vast majority of cases, this extra code is straightforward boilerplate that is
+both quick to write and light on bugs.
 
-\lstinline{ed} wasn't merely the only editor around, however --
-it included a set of powerful features
-that made it one of the most useful text editors available at
-that time. The extreme power and flexibility of this simple
-program were instrumental in the development of the Unix philosophy,
-with its emphasis on scriptability, doing one thing well, handling
-text with regular expressions, and inventing little languages
-to solve specific tasks. It all began with \lstinline{ed}.
+I'm going to argue against hierarchy at two levels: the level of data
+structures within a code library, and the level of libraries within a project.
+At the level of individual data structures, rather than building a hierarchy of
+data classes, I will argue for the advantages of Go-style interfaces, which
+have effectively only two levels: structures, which hold data, and interfaces,
+which specify patterns for manipulating structures.  At the level of libraries
+in a project, I have noticed a trend toward more hierarchical project
+structures over time due largely to the use of interpreted languages.  I am
+going to argue against the interpreted language paradigm of extending and
+embedding interpreters, in favor of the flexible, hierarchy-free method of
+directly linking compiled object files.
 
-\lstinline{ed} was, at least nominally, the standard Unix text editor
-for several decades.
-There is a recurring joke on the internet, going back to at least the early
-USENET days,
-that \lstinline{ed}'s place as the standard editor was a comical throwback
-to a time when RAM (or \emph{core} for the elder statesmen) was measured
-in kilobytes, having been superseded in terms of usability by much more
-powerful editors such as \lstinline{vi} and \lstinline{emacs}.
-I am not interested in arguing that \lstinline{ed} is better
-than newer editors, but instead argue here that many of the
-best qualities of the Unix philosophy are reflected by the design decisions
-in its original text editor.
-Whatever \lstinline{ed}'s faults may be, it was the text editor used to write
-the Unix kernel, shell, and userspace tools. Since the creators of Unix
-wrote their own text editor, they could have written a better one if they thought one existed. It is
-of note that most of the Bell labs alumni that created Unix continued
-to use \lstinline{ed} long after \lstinline{vi} and other full-screen editors
-became available, and eventually wrote their own replacements for \lstinline{ed} --
-\lstinline{sam} and \lstinline{acme} -- that hew much closer to \lstinline{ed}'s
-original regex-oriented user interface.
+\section{The problem with hierarchy}
 
-\section{Minimalism}
+\section{The small scale: interfaces over classes}
 
-The Unix V6 \lstinline{ed} source code is only 1339 lines of assembly, which translated into 1333 lines of C in Unix V7.
-Not bad for an editor that includes a full regular expression engine
-and complete scriptability. This was due partially to the technical constraints
-of the time (the PDP-7 on which \lstinline{ed} ran had only 4k-64k of 18-bit words in core memory),
-but had more to do with a philosophy that one should use just enough code,
-and no more, to complete the task at hand. This turned out to be one of the
-strengths of Unix generally -- a naïve hacker could read and digest the entire
-codebase because all code was as small and simple as it could be. This allowed
-new programmers to quickly get up to speed and begin modifying the source, even
-if they didn't know the original authors.
+I'm going to pick on object oriented programming (OOP) for a minute here. If you open a programming textbook, it will tell you that the canonical four
+pillars of OOP are:
 
-\section{Unbroken interface}
+\begin{enumerate}
+    \item Encapsulation: binding together data and functions into objects to prevent misuse and reduce global complexity.
+    \item Composition: Objects can hold other objects.
+    \item Inheritance: `Subclasses' that are (confusingly) strict supersets of another class `inherit' the methods of the `superclass', allowing for implicit code re-use.
+    \item Polymorphism: The ability for a function to call different code depending on the type of its argument(s).
+\end{enumerate}
 
-\lstinline{ed} never pulls your attention from one place to another.
-One of the big advantages that command line programmers tout about
-the command line in general, and text-user-interface text editors
-such as \lstinline{vi} in particular, is that they allow you to
-``live'' exclusively in the terminal, never distracted
-by pop-up windows or action in another place on the screen,
-and they never require you to flip through a set of windows using
-\lstinline{alt + tab} just to find the thing you meant to work on.
-This is true up to a point. When you enter \lstinline{vi},
-your terminal is taken away from you in a meaningful sense. The entire
-terminal view is erased and instead filled with the contents of the
-text buffer you're currently editing. If you want to go back to your shell
-for a minute, you can do so by a variety of methods, but that means
-\lstinline{vi} has to save your terminal contents and write them
-back to ther terminal so you can see them again. You can't simultaneously
-see your terminal and your edited document. \lstinline{ed} never had
-this problem. Because it doesn't directly manipulate your
-screen, but instead just prints to \lstinline{stdout}, entering
-\lstinline{ed} does not clear your screen, and any useful
-information in your terminal (say, the output of `ls' or `cat')
-is still available to you.
+What the proponents of OOP told people in its heyday was that it was the
+best, or maybe only, way to achieve these goals. Although we usually associate
+OOP with languages designed to facilitate the use of OOP practices, all of the
+major OOP paradigms can be implemented in non-OOP languages such as C. Of the
+four items above, three are (mostly) unambiguously useful: encapsulation keeps
+the complexity of a project low, composition lets you build big objects out of
+small, modular pieces, and polymorphism allows a language to operate at a
+higher level of abstraction.  Inheritance is the odd one out. The point of
+inheritance is to let you re-use code, but one of the most common and confusing
+types of errors comes from multiple inheritance name conflicts, where you
+inherit methods from two different classes, each with the same method name but
+different code. A quickie solution for this is the removal of multiple
+inheritance, but then code re-use is destroyed -- a given class can only
+inherit code from one other class.  This is where the hierarchy becomes a
+problem: classes in a hierarchy can only inherit from other classes higher in
+the hierarchy.
 
-Likewise, in \lstinline{vi}, there is a command (\lstinline{!}) that allows you
-to send text to the shell to be interpreted as a shell command.
-This is a cool feature because it allows you to do things like
-take the contents of a line in your document, pipe it to a command,
-and view the output of the command or write it back into the current buffer.
-The only problem is, when you do this, you get that crazy interface jump
-again. The view switches back to your shell output, and you can't see
-the document you're editing. Pressing a key will get you back to the document,
-but now you can't see the shell output any more! This leads to strange
-patterns in the use of \lstinline{vi}. I once saw a stackoverflow thread
-in which someone asked how to see the contents of the current directory from
-inside \lstinline{vim}. Rather than the simple answer (\lstinline{!ls}), the
-top answer claimed that the right way to do this was to use \lstinline{:e ctrl-d}
-to start to open a new buffer for editing (\lstinline{:e}), then ask \lstinline{vi}
-to give you a list of autofill options for the new buffer (\lstinline{ctrl-d}).
-This should not be necessary, and in \lstinline{ed}, it isn't. When you type
-\lstinline{!ls} in \lstinline{ed}, you just get back 
-the output of \lstinline{ls}, correctly formatted and unmoving, on the next
-line of your terminal. This allows for the \lstinline{!} command to do what
-it was always intended to do: use shell programs as extensions to \lstinline{ed}
-seamlessly, without any need for a built-in scripting language.
-This is a common thread with \lstinline{ed}: it leans heavily on the interfaces provided
-by the operating system (\lstinline{stdin}, \lstinline{stdout}, the terminal, the shell, etc.).
-This isn't laziness, but rather a method for keeping the code small, the interface consistent,
-and the maximum number of tools instantly available to the user. In short, it is good design.
+There are lots of solutions to this problem, but Go's solution is an especially
+interesting one.  In Go, there are only structs (classes that just contain
+data), which are at the bottom of the hierarchy, and interfaces (equivalent to
+abstract classes in the OOP world -- just a collection of function pointers).
+There is no inheritance from interface to structs, and interfaces never hold
+any data. Because interfaces cannot inherit from other interfaces, this is a
+flat hierarchy with only two levels: structs at the bottom, and interfaces at
+the top, defining how structs can interact.  The advantage of the interface
+worldview that Go promotes is that any struct can fulfill any interface, and
+functions can take interfaces as arguments. So, to write code that is easily
+reusable, write code that works on interfaces, and then you can always
+implement that interface on a struct as needed. Let's see an example. Go is
+built around interfaces, but let's implement one in C so we can see that it's a
+language-agnostic way of looking at data and code.
 
-\section{Regular expressions}
-
-Apart from straightforward entry of text, the primary method
-for editing text in \lstinline{ed} is regular expression
-find-and-replace. In fact, because \lstinline{ed} is a line editor,
-this is the only way to edit text without rewriting an entire line
-at the minimum. First time users of \lstinline{ed} find this
-constraining, but the extreme flexibility of regular expressions
-allows for arbitrarily complex edits on any text. With practice,
-this becomes as natural, and as quick, as any other type of interactive
-editing. This type of edit is also naturally extensible to multi-line
-editing, a feature that is often touted as a killer ``new'' feature of
-modern text editors (see sublime text, atom, or Visual Studio Code).
-For example, take the following file:
-
-\begin{lstlisting}[language=c]
-#include <stdlib.h>
+\begin{lstlisting}[language=C]
 #include <stdio.h>
-#include <string.h>
 
-int main() {
-    char *input1 = "Hello world!";
-    char *input2 = "Here we are, world!";
-    char *input3 = "Goodbye world!";
-    char *s2 = malloc(sizeof(char) * (strlen(input1)+1));
-    strcpy(s2, input1);
-    puts(s2);
-    char *s2 = malloc(sizeof(char) * (strlen(input2)+1));
-    strcpy(s2, input2);
-    puts(s2);
-    char *s2 = malloc(sizeof(char) * (strlen(input3)+1));
-    strcpy(s2, input3);
-    puts(s2);
-    free(s2);
-    return(0);
+/* The template for the virtual function table for printables */
+typedef struct printable_vtable {
+    void (*print) (void *);
+} printable_vtable;
+
+/* Define the printable interface. Note that all interfaces have the same structure:
+a void pointer to the underlying concrete type, and a pointer to the concrete type's
+implementation of the interface vtable */
+
+typedef struct printable {
+    void *val;
+    printable_vtable *vt;
+} printable;
+
+/* Implement each of the interface's vtable functions as a
+polymorphic function for ease of use */
+
+void printable_print(printable p) {
+    p.vt->print(p.val);
+}
+
+/* Below, we are going to implement a 'printable' interface for 'int' objects */
+
+/* Define how to print ints */
+
+void print_int(void *vi) {
+    int *i = vi;
+    printf("%d", *i);
+}
+
+/* Define a global printable vtable for ints */
+
+printable_vtable int_printable_vtable = {
+    .print = print_int
+};
+
+/* A function to wrap an int in the printable interface: */
+
+printable int2printable(int *i) {
+    return (printable) {
+        .val = i,
+        .vt = &int_printable_vtable
+    };
 }
 \end{lstlisting}
 
-There is a memory leak (mulitple \lstinline{malloc\}s with the same pointer) that we
-can fix using the command:
+This makes an interface for data that can be printed. For any data type,
+you can implement the functions that this interface needs. Once you've done that,
+any function that uses this interface as an argument can be used indirectly on
+your data. Here's an example of running `printable\_print' on an integer:
 
-\begin{lstlisting}
-/malloc.*input2/,/malloc.*input3/s/malloc(/realloc(s2, /
-
-\end{lstlisting}
-to change the file to the following:
-
-\begin{lstlisting}[language=c]
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
+\begin{lstlisting}[language=C]
 int main() {
-    char *input1 = "Hello world!";
-    char *input2 = "Here we are, world!";
-    char *input3 = "Goodbye world!";
-    char *s2 = malloc(sizeof(char) * (strlen(input1)+1));
-    strcpy(s2, input1);
-    puts(s2);
-    char *s2 = realloc(s2, sizeof(char) * (strlen(input2)+1));
-    strcpy(s2, input2);
-    puts(s2);
-    char *s2 = realloc(s2, sizeof(char) * (strlen(input3)+1));
-    strcpy(s2, input3);
-    puts(s2);
-    free(s2);
-    return(0);
+    int i=25;
+    printable_print(int2printable(&i));
+    /* This will print '25' */
+    
+    return 0;
 }
 \end{lstlisting}
 
-This fixes the error in a single command that can be used on an arbitrarily large
-number of lines defined by regular expressions.
-\lstinline{ed} is the program that introduced the convention,
-in Unix programs, that regular expressions should be surrounded
-by /slashes/ and should be prefixed by commands (`s', `g') and suffixed
-by options (`p', `2', `l').
+Implementing the interface for new types just means implementing the functions for the interface, then wrapping in a vtable:
 
-\section{Scriptability}
+\begin{lstlisting}[language=C]
+printable_vtable double_printable_vtable = {
+    .print = print_double
+};
 
-\lstinline{ed} was intended to be used interactively. A typical \lstinline{ed}
-session looks something like this:
-
-\begin{lstlisting}
-$ ls
-ed_print.c
-$ ed ed_print.c
-93
-1,$p
-#include <stdio.h>
-
-int main() {
-    printf("ed is the standard editor\n");
-    return(0);
+void print_double(void *vd) {
+    double *d = vd;
+    printf("%lf", *d);
 }
-/printf/
-    printf("ed is the standard editor\n");
-s/the.*ard/a good/p
-    printf("ed is a good editor\n");
-w
-87
-q
-\end{lstlisting}
 
-Here, the author opens the file ``ed\_print.c'' using ed,
-prints the contents of the file (\lstinline{1,$p} indicates
-that one should ``p''rint the lines from 1 until the end of the document),
-searches (/) for a \lstinline{printf} line,
-then ``s''ubstitutes the phrase ``a good'' for the regular
-expression \lstinline{the.*ard}.
-Finally, the programmer ``w''rites the modified buffer to disk and ``q''uits.
-This is accomplished entirely in a unixy way -- \lstinline{ed} opens
-up a file, reads it into a buffer, then applies operations to the buffer using commands
-sent to it over \lstinline{stdin}. Because it accepts commands
-directly on \lstinline{stdin}, \lstinline{ed} can be used just
-as easily to run pre-cooked `scripts' of \lstinline{ed} commands
-as it can be used interactively. It is this feature that
-led to its greatest influence on Unix: the creation of pipeable
-shell tools and little languages.
-
-\section{Descendants of \lstinline{ed}}
-
-\lstinline{ed} predates the pipe, the feature of Unix that most easily allowed shell
-tools to interact with one another.
-Before pipes were added, \lstinline{ed} was the easiest and most
-often used method for quickly automating text manipulation tasks.
-When pipes were added to Unix, \lstinline{ed} was the template for many
-of the major pipeline tools.
-\lstinline{grep} is the most famous example of this, being a neologism derived
-from the common ed pattern \lstinline{g/re/p}, for ``global regular expression print''.
-That's right: the most famous shell tool is a re-implementation of an \lstinline{ed}
-command. Further tools, such as \lstinline{sed} and \lstinline{awk}, have similar
-roots in \lstinline{ed}. From them, there is a clear throughline connecting
-\lstinline{ed} all the way to modern scripting languages like \lstinline{perl} and
-\lstinline{python} (\lstinline{perl} even uses \lstinline{ed}'s \lstinline{/regex/} syntax).
-In many ways, \lstinline{ed} was the template for the entire Unix paradigm of integrating scripting languages
-with compiled code for rapid prototyping, portability, and speed.
-
-\lstinline{ed} didn't just influence scripting languages. Through the lexer and parser
-programs \lstinline{lex} and \lstinline{yacc} it directly influenced the way that
-languages are implemented. \lstinline{lex} is a lexing program that feeds
-language tokens to \lstinline{yacc}, a language parser. \lstinline{lex} code consists
-primarily of a set of \lstinline{ed}-style regular expressions that specify
-the types of tokens that the language should accept. These programs were used to implement
-some of the above languages, most notably \lstinline{awk}. So, \lstinline{awk} is an ed-influenced
-regular-expression-driven reporting language, written in an ed-influenced, regular-expression-driven lexer/parser toolset,
-and the code for all of these tools was written in \lstinline{ed}. It's \lstinline{ed} all the way down!
-
-\section{Some takeaways}
-
-If you take one thing from this essay, it should not just be that \lstinline{ed} is
-a masterpiece of minimalist design, or that it is one of the most influential programs
-ever written, though it is both. What you should take away is that using \lstinline{ed}
-is a way to use Unix as intended by the people that designed
-the entire system. Don't worry about using it all the time -- I certainly don't. But try
-using it for a few days, even a few weeks. It may be frustrating at first, but using
-it will show you just how powerful a few carefully chosen lines of C code can be.
-After using it for a while, you will see all text as beautifully nested sets of
-regular expressions, ready to be taken apart and put back together with a single
-\lstinline{s/re/re/g}. You'll scoff at the ``power users'' of other editors,
-with their clunky point-and-click interfaces and unneccessary extensions.
-If you don't believe me about any of this, at least believe that \lstinline{ed} really
-is a useful editor -- I used it to write this entire document.
-
-\section{Appendix: some cool \lstinline{ed} commands}
-
-\lstinline{ed} can seem a bit baroque, but there are a few common patterns that, once learned,
-make its use simple and enjoyable. What follows are commands (mostly regex
-substitution patterns) that I've found make for easy writing.
-
-
-\subsection{Choosing item to substitute}
-
-\lstinline{ed} performs a substitution on the first match in a line by default, and
-performs the substitution on all lines with the \lstinline{g} suffix. That's not all,
-though. If you want to make a substitution on the second match for a regular expression,
-simply add that number as a suffix to the command, as below:
-
-\begin{lstlisting}
-,p
-Is it not true that regular expressions are not flexible enough for interactive editing?
-s/not //2
-Is it not true that regular expressions are flexible enough for interactive editing?
-wq
-\end{lstlisting}
-
-\subsection{Surrounding text}
-
-To surround text with, say, (parentheses) or ``quotes'', the following pattern helps a lot.
-Match the text that you want to surround, then use the \lstinline{&} symbol to reference
-the entire matched group, like so:
-
-\begin{lstlisting}
-,p
-Visual Studio Code is a text editor.
-s/tex.*or/"&"/p
-Visual Studio Code is a "text editor".
-\end{lstlisting}
-
-\subsection{Editing surrounded text}
-
-By the same token, you can easily edit the text in a set of (parentheses) or similar with the following:
-
-\begin{lstlisting}
-.p
-    for (int i=0; i<10; i++) {
-s/(.*)/(int i=10; i>0; i++)
-    for (int i=10; i>0; i++) {
-\end{lstlisting}
-
-\subsection{swapping words in a sentence}
-
-Capture groups are a quick way to move words around in a sentence. Capture them with \lstinline{\(\)}, then
-reference them with \lstinline{\1}, \lstinline{\2}, etc.
-
-\begin{lstlisting}
-.p
-I think you're stuck in the '70s really
-s/\(st.*70s\) \(re.*\)/\2 \1
-I think you're really stuck in the '70s
-s/\(stuck\) \(really\)/\2 \1
-\end{lstlisting}
-
-\subsection{Appending to a line}
-
-Substitutions are a quick way to append to a line, like so:
-
-\begin{lstlisting}
-,p
-The quick brown fox
-s/$/jumps over the lazy dog./p
-The quick brown fox jumps over the lazy dog.
-\end{lstlisting}
-
-\subsection{Commenting out lines}
-
-Commenting out lines of code is easy with a quick substitution:
-
-\begin{lstlisting}
-,p
-#include <stdio.h>
-
-int main() {
-    puts("I wonder if anyone will see this line?");
-    puts("They definitely won't see this one!");
-    puts("Or this one.");
-    return(0);
-}
-/They/,/Or/s/p.*/\/*&*\//
-,p
-#include <stdio.h>
-
-int main() {
-    puts("I wonder if anyone will see this line?");
-    /*puts("They definitely won't see this one!");*/
-    /*puts("Or this one.");*/
-    return(0);
+printable double2printable(double *d) {
+    return (printable) {
+        .val = d,
+        .vt = &double_printable_vtable
+    };
 }
 \end{lstlisting}
 
-Here, the \lstinline{p.*} regular expression matches everything in the line after the first p; \lstinline{\/*&*\/}
-surrounds that with comment symbols. Note that \lstinline{&} corresponds to the original matched text, and
-slashes are backslash escaped.
+Here's where things get good. You can easily write new functions that use the printable interface:
 
-\subsection{running external programs}
-
-\lstinline{ed} can easily run external programs without disrupting either \lstinline{ed}'s
-interface or the called program. The \lstinline{!} command calls an external (shell) command, as follows:
-
-\begin{lstlisting}
-
-$ ls
-a.txt
-$ ed a.txt
-81
-I don't have to stop editing this file
-just to list the files in this directory.
-!ls
-a.txt
-!
-q
-\end{lstlisting}
-
-\subsection{building and testing a program}
-
-You can build programs using tools like \lstinline{make} without leaving \lstinline{ed}. Here's a quick example:
-
-\begin{lstlisting}
-
-$ ls
-hi.c Makefile
-$ cat Makefile
-
-all: hi
-
-hi: hi.c
-	gcc -Wall -Werror -Wpedantic -Wextra -O3 -o $@ $^
-$ ed hi.c
-,p
-#include <stdio.h>
-
-int main() {
-    puts("Hi, everyone!")
-    return(0);
+\begin{lstlisting}[language=C]
+void printable_verbose_print(printable p, char *varname) {
+    printf("The value of %s is: ", varname);
+    printable_print(p);
+    putchar('\n');
 }
-!make
-gcc -Wall -Werror -Wpedantic -Wextra -O3 -o hi hi.c
-hi.c: In function ‘main’:
-hi.c:5:5: error: expected ‘;’ before ‘return’
-     return(0);
-     ^~~~~~
-!
-?put?
-s/$/;
-!make
-gcc -Wall -Werror -Wpedantic -Wextra -O3 -o hi hi.c
-!
-w
-q
 \end{lstlisting}
 
-If you have a test suite to run, put it into a shell script with a short name, and you can
-quickly call it from within \lstinline{ed}:
+These new functions will instantly work with
+any types that fulfill the printable interface:
 
-\begin{lstlisting}
-$ ls
-hi.c Makefile m
-$ cat m
-#!/bin/bash
-set -e
-
-make && \
-./hi
-$ ed hi.c
-!./m
-gcc -Wall -Werror -Wpedantic -Wextra -O3 -o hi hi.c
-Hi, everyone!
-!
-w
-q
+\begin{lstlisting}[language=C]
+int main() {
+    int i=25;
+    double d=3708.8;
+    printable_print(int2printable(&i));
+    puts("");
+    /* '25' */
+    printable_print(double2printable(&d));
+    puts("");
+    /* '3708.800000' */
+    printable_verbose_print(int2printable(&i), "i");
+    /* 'The value of i is: 25' */
+    printable_verbose_print(double2printable(&d), "d");
+    /* 'The value of d is: 3708.800000' */
+    
+    return 0;
+}
 \end{lstlisting}
 
-\subsection{Filtering text through external programs}
+This is the advantage of a hierarchy-free abstraction: the number of
+permutations of (interface function, concrete type) is proportional to 
+the number of interface functions times the number of concrete types,
+but the amount of code (and the complexity of your project) is proportional
+to the number of functions \textit{plus} the number of types.
 
-One of the most powerful \lstinline{ed} features is the ability to write to and read
-from external files and commands. The following syntax allows a portion of a file to be written
-to an external command:
+The downside of this paradigm is extra boilerplate in the implementation of interfaces.
+A common situation is pointer or getter/setter functions. Say you're writing a video game,
+and you have a set of characters, some of which are capable of fighting. If you have a `fighter'
+interface that looks like this:
 
-\begin{lstlisting}
-,p
-A common thing people need to do is wrap some lines. I like to use the "fmt" command to do this, though "fold" works just as well in a pinch.
-1w !fmt -w 40 > buf
-1r buf
-,n
-A common thing people need to do is wrap some lines. I like to use the "fmt" command to do this, though "fold" works just as well in a pinch.
-A common thing people need to do is
-wrap some lines. I like to use the
-"fmt" command to do this, though "fold"
-works just as well in a pinch.
-wq
+\begin{lstlisting}[language=C]
+
+typedef struct fighter_vtable {
+    double *(*health) (void *);
+    double *(*power) (void *);
+    double *(*defense) (void *);
+}
+
 \end{lstlisting}
 
-\subsection{splitting a line by a delimiter}
+For each of the critters that implements the `fighter' interface, you're going to have to
+write boring functions to get pointers to their important stats:
 
-Line splitting is easy with \lstinline{ed}, though it can be a bit unintuitive.
-In order to insert a newline character, you need to backslash-escape a literal newline, like so:
-
-\begin{lstlisting}
-,p
-entry1 entry2 entry3
-1s/ /\
-/g
-,p
-entry1
-entry2
-entry3
-w
-q
+\begin{lstlisting}[language=C]
+double *critter1_health(void *v) {
+    critter1 *c = v;
+    return &c->health;
+}
+double *critter2_health(void *v) {
+    critter2 *c = v;
+    return &c->health;
+}
+double *critter3_health(void *v) {
+    critter3 *c = v;
+    return &c->health;
+}
+/* ... */
 \end{lstlisting}
 
-Alternatively, you can farm this out to sed like so:
+The important thing about this boring code is that it's \textit{boring}. It's
+highly repetitive, straightforward, and difficult to mess up. Everything works
+exactly as you think it will, and there are no surprises of the type you get
+with complex multiple inheritance. The limiting factor in writing programs tends
+not to be how many lines of boilerplate you have to write, but how many complicated
+interactions there are between pieces of code. Well defined interfaces allow for
+code reuse while keeping the set of possible weird interactions low.
 
-\begin{lstlisting}
-,p
-entry1 entry2 entry3
-1w !sed 's/ /\r/g' > buf
-1r buf
-,p
-entry1 entry2 entry3
-entry1
-entry2
-entry3
-w
-q
-\end{lstlisting}
+\subsection{Other programming paradigms}
 
-\subsection{splitting a line at a sentence boundary}
+If you already dislike object oriented programming, you may be thinking,
+``Yeah, he's right -- inheritance was a terrible idea! I'm glad that I use
+functional programming, where these kinds of problems can't happen.'' Or
+similar. The truth is that most programming paradigms have mechanisms
+comparable to those in OOP. For example, closures provide the same technical
+capabilities as objects. Product types such as tuples are equivalent to structs,
+and sum types have many of the same issues as super- and sub-classes.
+That said, the same philosophy used in the examples above can be applied regardless
+of programming paradigm:
 
-One of \lstinline{ed}'s shortcomings is its difficulty dealing with text that isn't
-formatted cleanly into lines. It is possible
-to split a line by duplicating it, then deleting a different half of the line in each copy, as follows:
+\begin{enumerate}
+    \item Separate your data from code interfaces.
+    \item Write code that operates on interfaces.
+    \item Keep the hierarchy down to two levels: the data level and the interface level.
+\end{enumerate}
 
-\begin{lstlisting}
-,p
-This is one sentence. This is a second sentence.
-.t.
-,p
-This is one sentence. This is a second sentence.
-This is one sentence. This is a second sentence.
-1s/\..*/.
-This is one sentence.
-2s/[^.]*\. 
-This is a second sentence.
-,p
-This is one sentence.
-This is a second sentence.
-w
-q
-\end{lstlisting}
+\section{The large scale: linking over embedding and extending}
 
-But a much easier way to split a sentence is by inserting a newline as in the previous section:
+Let's talk about big projects. A big project almost never consists entirely of
+your own code. In fact, in most cases, the majority of the code in your project
+will originate not from you, but from libraries generated by other people that
+had different goals than you in mind. The library-centric approach to
+programming that we often see nowadays owes a great deal to the Unix tradition.
+This is so true that even opponents of Unix could see its merits. Richard P.
+Gabriel, one of the big proponents of the Lisp machine and a perennial Unix
+hater, pointed out Unix's strengths (what he calls ``worse-is-better'') in
+``Lisp: Good News, Bad News, How to Win Big'':
 
-\begin{lstlisting}
-,p
-This is one sentence. This is a second sentence.
-1s/\. /.\
+\begin{displayquote}
+In the worse-is-better world, integration is linking your .o files together,
+freely intercalling functions, and using the same basic data representations.
+You don’t have a foreign loader, you don’t coerce types across function-call
+boundaries, you don’t make one language dominant, and you don’t make the woes
+of your implementation technology impact the entire system.
 
-,p
-This is one sentence.
-this is a second sentence.
-w
-q
-\end{lstlisting}
+The very best Lisp foreign functionality is simply a joke when faced with the
+above reality. Every item on the list can be addressed in a Lisp
+implementation. This is just not the way Lisp implementations have been done in
+the right thing world.
+\end{displayquote}
 
-\subsection{Operating on lines filled with slashes}
+What he notices here is the advantage of a lack of hierarchy in Unix. Any
+library, once bound to the C API, can be called from any language and run as
+native code. That means all of your C, Fortran, C++, Go, Rust, Pascal, and (God help
+you) COBOL libraries can be linked together and run using any language.  You
+don't even need to know what the implementation language for a given library
+is: as long as you have a .o, .a, .dll, or .sa file to link, things will just work.
 
-When you want to perform a substitution that involves slashes, ordinary lstinline{s///} substitution notation
-becomes cumbersome because all slashes must be backslash escaped.
-This is easily circumvented by using a character other than \lstinline{/} for the substitution command.
-The \lstinline{s} command assumes that whatever character follows \lstinline{s} is the delimiter
-for the command, so any character can be used, as follows:
+Let's contrast that with the Lisp world that Gabriel was describing above.
+Lisp is largely a relic now (thanks in part to the very problem Gabriel
+describes), but its philosophy about interoperation with libraries and
+languages lives on in interpreted languages such as Python, Java, Ruby, Lua, R,
+and shell. Indeed, the FFI (foreign function interface) libraries used by most
+of these for calling code from other languages are named after the original
+Lisp FFI. There is a natural hierarchy separating compiled languages, which run
+directly on the machine, from interpreted languages, which run on a simulated
+machine that we call an interpreter (or virtual machine, or whatever else). A
+consequence of this is that all compiled languages sit together at the same
+level of the hierarchy, and they can call each other's functions as long as
+they conform to a consistent programming API and ABI, such as the C API.  This
+non-hierarchical structure is part of the reason that so much Fortran code is
+still around: not a lot of people write Fortran any more outside of the high
+performance computing world, but there are a ton of Fortran libraries still in
+use, such as [], [], and []. The libraries conform to the C API, which means
+they can be called from any other programming language. This means the Fortran
+libraries can outlive Fortran culture: as long as working Fortran compilers
+exist and people can do minimal security maintenance of old Fortran code, this
+code never needs to be rewritten.
 
-\begin{lstlisting}
-,p
-/this/is/a/long/filename.txt
-s|long/filename|long_filename.txt
-,p
-/this/is/a/long_filename.txt
-s.long_filename\.txt.long_filename.tex
-,p
-/this/is/a/long_filename.tex
-wq
-\end{lstlisting}
+Interpreted languages, on the other hand, each consider themselves to be the
+top of the hierarchy, with all other languages below them. Let's take Python as
+an example.  It's very easy to write a wrapper for C code in Python
+(``extending'' Python with C). There are several different systems to assist
+this process, including the ctypes library, SWIG, and cython. Because Python is
+written in C, you can even write your own Python package in pure C,
+hand-writing your own wrappers for your C code and then loading the compiled
+object file as a ``native'' Python package.
+
+Unfortunately, the obverse is quite a challenge: calling Python from another
+language, such as C, requires you to start an instance of the Python
+interpreter, keep it live for as long as you need any Python objects or
+functions, and then close it. This is what is meant by ``embedding'' Python in
+a C executable. Actually doing this is pretty annoying, and it dramatically
+increases the barrier to using Python code outside of Python.  There's no way
+to quickly link a single Python function, call it once, and forget it. Lua is
+perhaps the easiest language to embed in an executable from another language,
+but it accomplishes this by having very few features and a tiny standard
+library. It also still requires wrappers to get objects onto and off of the Lua
+stack, making it still more troublesome than linking .o files.
+
+This gets worse in the case where one interpreted language needs to call
+functions in another. Let's say you are writing a statistics package in Python,
+and you need to perform a Fisher's exact test (FET) in a situation where more
+than two test outcomes are possible. Python can do a two-case FET fine, but
+there simply isn't support for three or more cases. You look around and find
+that R's FET implementation can handle an arbitrary number of cases. So now you
+need to get R's FET function to run in Python. There are several ways to
+accomplish this, none of them easy. You can:
+
+\begin{enumerate}
+    \item Try to start up an R interpreter in Python using the (pretty cool) rpy2 package.
+    \item Write a shell script that runs your Python code, saves your data in text files, uses those as input for the R code, saves the R output in text files, then runs some more Python code on the R output. This one can be made easier using pipes, but R doesn't play nice with pipes.
+    \item Write a Python wrapper that uses Popen or similar to open R, and pipe your data from Python to R in a structured format. I did this once to call R's ggplot package from Python by piping data in json format, but the differences in Python's NaN, json's nil, and R's NA caused lots of bugs.
+    \item Just give up and re-write your code in R.
+\end{enumerate}
+
+If you have experience with either of these languages, the gears in your head
+are probably already turning, thinking of solutions to this problem I haven't
+listed here. There may well be an easier way to solve this problem, but that's
+not the point.  The point is that, if R's FET package had been written in a
+compiled language, the problem wouldn't exist in the first place. Even if it
+was written in ancient Fortran, as long as it used the C API, \textit{any}
+compiled language could link it without knowing \textit{what} it was written
+in. It wouldn't matter! And it shouldn't matter. One thing that is certainly
+true in the computing world is that things will keep changing. The programming
+languages that are wildly popular now may not exist at all in a few years. All
+of the code written in an interpreted language is headed for the dustbin of
+history. Consider Perl, perhaps the most widely used interpreted language of
+all time.  After its heyday in the '80s and '90s, it was largely replaced with
+Python and other easier-to-read languages. There are tons of very good perl
+libraries out there like [] and [], but the only programs that use those
+libraries are perl programs, and there are fewer of those in use every year.
+Compare that with Fortran, which was written in the '50s and whose libraries
+still underpin new programs written in all kinds of languages. There is a real
+cost to writing in an interpreted language: all of your code is temporary,
+and will eventually need to be rewritten from scratch to be callable in the next
+popular interpreter. If you want your code to stay alive, it needs to be compiled.
+
+\section{C as a lingua franca, and other hidden hierarchies}
+
+You might be reading this and thinking, ``He's saying compiled code doesn't
+have hierarchy, but it all has to conform to the C API to interoperate, and
+that means C is really sitting at the top of the hierarchy. He's really just
+another C partisan who's trying to sneak his favorite language to the top of
+the heap.'' I hear you, and I can't deny that I'm a big fan of languages like
+C. I'm as biased as anyone, but I think my arguments above stand anyway. One of
+the reasons I've used languages like Fortran in my examples is to show that,
+even if C's API became standard through accidents of history, the fact that
+compiled languages have a single standardized API is a huge advantage. It
+wouldn't matter if a different language had been the standard the way that
+Pascal almost was on the original Mac -- any standard, even a bad one, allows
+for the collapse of hierarchy into a flat domain in which all languages
+interoperate cleanly.
+
+Another thing that should be noted is that compiled code is very often called
+from an interpreted language. In the Unix world, almost all programs
+historically were started by the shell, which is an interpreter. I can't
+realistically say to never use an interpreted language, because that would
+ultimately mean running all code in batch mode. No one wants to go back to
+non-interactive computers. What I am saying is, don't write important code in
+interpreted languages. We should re-think what interpreted languages are for,
+and think of them more like simple shells for running compiled code. Anything
+that might be worth using again, even if you don't see exactly how it will be
+used, should be written in a compiled language. Otherwise, it will all get
+thrown out in the long run.
 
 
-
-
+\section{Go forth, and create reusable code}
 
 % \lstinline{ed} is still as usable today as
 % it was in 1969, and using \lstinline{ed} for a few days or weeks will let
