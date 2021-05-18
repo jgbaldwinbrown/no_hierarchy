@@ -52,8 +52,6 @@ going to argue against the interpreted language paradigm of extending and
 embedding interpreters, in favor of the flexible, hierarchy-free method of
 directly linking compiled object files.
 
-\section{The problem with hierarchy}
-
 \section{The small scale: interfaces over classes}
 
 I'm going to pick on object oriented programming (OOP) for a minute here. If you open a programming textbook, it will tell you that the canonical four
@@ -327,7 +325,7 @@ they conform to a consistent programming API and ABI, such as the C API.  This
 non-hierarchical structure is part of the reason that so much Fortran code is
 still around: not a lot of people write Fortran any more outside of the high
 performance computing world, but there are a ton of Fortran libraries still in
-use, such as [], [], and []. The libraries conform to the C API, which means
+use, such as BLAS and LAPACK. The libraries conform to the C API, which means
 they can be called from any other programming language. This means the Fortran
 libraries can outlive Fortran culture: as long as working Fortran compilers
 exist and people can do minimal security maintenance of old Fortran code, this
@@ -384,7 +382,7 @@ of the code written in an interpreted language is headed for the dustbin of
 history. Consider Perl, perhaps the most widely used interpreted language of
 all time.  After its heyday in the '80s and '90s, it was largely replaced with
 Python and other easier-to-read languages. There are tons of very good perl
-libraries out there like [] and [], but the only programs that use those
+libraries on CPAN like DBI and LWP, but the only programs that use those
 libraries are perl programs, and there are fewer of those in use every year.
 Compare that with Fortran, which was written in the '50s and whose libraries
 still underpin new programs written in all kinds of languages. There is a real
@@ -422,6 +420,23 @@ thrown out in the long run.
 
 
 \section{Go forth, and create reusable code}
+
+So there you go. Contrary to popular belief, it is possible to write code that
+can be re-used indefinitely into the future, without major modifications. The
+main barrier to reusable code in modern programming is hierarchy. Hierarchy
+within a project locks code into a set of rigid objects, keeping functions from
+being freely reused and interchanged. Hierarchy between projects prevents some
+languages and frameworks from calling libraries in other languages, keeping
+libraries from being freely reused and interchanged. To keep your code
+reusable, write in a hierarchy-free programming style.  Write functions to
+operate on abstract interfaces that can be implemented by any data structure,
+and write all of your important code in compiled languages with a C API to make
+them universally available. With these tools, we can break out of the cycle of
+re-writing the same algorithms every time a flashy new language comes along.
+Every library can build upon the ones that came before, and projects can freely
+intermix a variety of languages and programming styles. We don't need our programs
+to have limited lifespans. With a few simple practices and some good decisions,
+we can write the programs that the future will be built upon.
 
 % \lstinline{ed} is still as usable today as
 % it was in 1969, and using \lstinline{ed} for a few days or weeks will let
